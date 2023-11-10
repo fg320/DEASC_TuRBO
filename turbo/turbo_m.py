@@ -64,7 +64,14 @@ class TurboM(Turbo1):
         min_cuda=1024,
         device="cpu",
         dtype="float64",
+        X_init_provided=False,
+        X_init_same=None,
     ):
+
+        # Initial points provided from anothr optimisation (not original)
+        self.X_init_provided = X_init_provided
+        self.X_init_same = X_init_same
+
         self.n_trust_regions = n_trust_regions
         super().__init__(
             f=f,
@@ -80,6 +87,8 @@ class TurboM(Turbo1):
             min_cuda=min_cuda,
             device=device,
             dtype=dtype,
+            X_init_provided=self.X_init_provided,
+            X_init_same=self.X_init_same,
         )
 
         self.succtol = 3
@@ -144,8 +153,12 @@ class TurboM(Turbo1):
         """Run the full optimization process."""
         # Create initial points for each TR
         for i in range(self.n_trust_regions):
-            X_init = latin_hypercube(self.n_init, self.dim)
-            X_init = from_unit_cube(X_init, self.lb, self.ub)
+            if self.X_init_provided==True:
+                X_init = self.X_init_same
+                X_init = from_unit_cube(X_init, self.lb, self.ub)
+            else:
+                X_init = latin_hypercube(self.n_init, self.dim)
+                X_init = from_unit_cube(X_init, self.lb, self.ub)
             fX_init = np.array([[self.f(x)] for x in X_init])
 
             # Update budget and set as initial data for this TR

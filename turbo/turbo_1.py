@@ -62,7 +62,13 @@ class Turbo1:
         min_cuda=1024,
         device="cpu",
         dtype="float64",
+        X_init_provided=False,
+        X_init_same=None,
     ):
+
+        # Initial points provided from anothr optimisation (not original)
+        self.X_init_provided = X_init_provided
+        self.X_init_same = X_init_same
 
         # Very basic input checks
         assert lb.ndim == 1 and ub.ndim == 1
@@ -245,8 +251,12 @@ class Turbo1:
             self._restart()
 
             # Generate and evalute initial design points
-            X_init = latin_hypercube(self.n_init, self.dim)
-            X_init = from_unit_cube(X_init, self.lb, self.ub)
+            if self.X_init_provided==True:
+                X_init = self.X_init_same
+                X_init = from_unit_cube(X_init, self.lb, self.ub)
+            else:
+                X_init = latin_hypercube(self.n_init, self.dim)
+                X_init = from_unit_cube(X_init, self.lb, self.ub)
             fX_init = np.array([[self.f(x)] for x in X_init])
 
             # Update budget and set as initial data for this TR
